@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"net"
 	"os"
@@ -21,12 +22,29 @@ const (
 	leader
 )
 
+// Types of messages
+const (
+	request_vote uint8 = iota
+	append_entries
+)
+
 /*
  * Peer
  */
 type NodeAddr struct {
 	ip   string
 	port int16
+}
+
+type Entry struct {
+}
+
+/*
+ * Messages
+ */
+type NodeMsg struct {
+	msg_type uint8
+	entries  []string
 }
 
 /*
@@ -46,6 +64,7 @@ type NodeLogEntry struct {
  *	status: Status of the raft algorithm. This way goroutines can end
  */
 type NodeStatus struct {
+	mutex          sync.Mutex
 	peers          []NodeAddr
 	received_votes int8
 	term           int
@@ -112,7 +131,7 @@ func main() {
 				if err != nil || len(port) == 0 {
 					fmt.Printf("Error: port value \"%s\"is not an integer.\n", port)
 				}
-				status.peers = append(status.peers, NodeAddr{ip, int16(nPort)})
+				addPeer(&status, ip, nPort)
 				fmt.Printf("Added peer %s:%d\n", ip, nPort)
 			}
 			continue
@@ -126,9 +145,11 @@ func main() {
 		// PEERS command
 		if match := regexPEERS.FindSubmatch(line); len(match) > 0 {
 			fmt.Println("Peers:")
+			status.mutex.Lock()
 			for _, v := range status.peers {
 				fmt.Println("\t" + v.ip + ":" + strconv.Itoa(int(v.port)))
 			}
+			status.mutex.Unlock()
 			fmt.Println()
 			continue
 		}
@@ -148,9 +169,11 @@ func main() {
  */
 func listener(l net.Listener, status *NodeStatus) {
 	for {
+		status.mutex.Lock()
 		if status.status == "dead" {
 			break
 		}
+		status.mutex.Unlock()
 		conn, err := l.Accept()
 		if err != nil {
 			fmt.Println("Error accepting")
@@ -162,7 +185,7 @@ func listener(l net.Listener, status *NodeStatus) {
 			fmt.Println("Error reading from socket")
 			os.Exit(1)
 		}
-		go reply(buffer, status)
+		go reply(conn, buffer, status)
 	}
 	fmt.Println("Exiting listener goroutine...")
 }
@@ -170,7 +193,26 @@ func listener(l net.Listener, status *NodeStatus) {
 /*
  * Function that replies to messages
  */
-func reply(buffer []byte, status *NodeStatus) {
+func reply(conn net.Conn, buffer []byte, status *NodeStatus) {
+	var msg NodeMsg
+	err := json.Unmarshal(buffer, &msg)
+	if err != nil {
+		fmt.Println("Error unmarshaling message.")
+		return
+	}
+	switch msg.msg_type {
+	case request_vote:
+		status.mutex.Lock()
+
+		status.mutex.Unlock()
+	case append_entries:
+	}
+}
+
+func addPeer(status *NodeStatus, ip string, port int) {
+	status.mutex.Lock()
+	status.peers = append(status.peers, NodeAddr{ip, int16(port)})
+	status.mutex.Unlock()
 }
 
 /*
