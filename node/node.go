@@ -44,6 +44,7 @@ type Entry struct {
  */
 type NodeMsg struct {
 	msg_type uint8
+	term     int
 	entries  []string
 }
 
@@ -64,22 +65,26 @@ type NodeLogEntry struct {
  *	status: Status of the raft algorithm. This way goroutines can end
  */
 type NodeStatus struct {
-	mutex          sync.Mutex
-	peers          []NodeAddr
-	received_votes int8
-	term           int
-	log            []NodeLogEntry
-	status         string
+	mutex              sync.Mutex
+	peers              []NodeAddr
+	received_votes     int8
+	voted_current_term bool
+	term               int
+	log                []NodeLogEntry
+	raftStatus         uint8
+	nodeStatus         string
 }
 
 func main() {
 
 	status := NodeStatus{
-		peers:          []NodeAddr{},
-		received_votes: -1,
-		term:           0,
-		log:            []NodeLogEntry{},
-		status:         "alive",
+		peers:              []NodeAddr{},
+		received_votes:     -1,
+		voted_current_term: false,
+		term:               0,
+		log:                []NodeLogEntry{},
+		raftStatus:         follower,
+		nodeStatus:         "alive",
 	}
 
 	// Create tcp server
@@ -145,11 +150,9 @@ func main() {
 		// PEERS command
 		if match := regexPEERS.FindSubmatch(line); len(match) > 0 {
 			fmt.Println("Peers:")
-			status.mutex.Lock()
 			for _, v := range status.peers {
 				fmt.Println("\t" + v.ip + ":" + strconv.Itoa(int(v.port)))
 			}
-			status.mutex.Unlock()
 			fmt.Println()
 			continue
 		}
@@ -170,7 +173,7 @@ func main() {
 func listener(l net.Listener, status *NodeStatus) {
 	for {
 		status.mutex.Lock()
-		if status.status == "dead" {
+		if status.nodeStatus == "dead" {
 			break
 		}
 		status.mutex.Unlock()
@@ -200,12 +203,42 @@ func reply(conn net.Conn, buffer []byte, status *NodeStatus) {
 		fmt.Println("Error unmarshaling message.")
 		return
 	}
-	switch msg.msg_type {
-	case request_vote:
-		status.mutex.Lock()
+	status.mutex.Lock()
+	defer status.mutex.Unlock()
 
-		status.mutex.Unlock()
+	switch msg.msg_type {
+	// si es una peticion de votacion
+	case request_vote:
+		switch status.raftStatus {
+		case follower:
+			// responder con aceptar
+			// poner voted_current_term a true
+			status.voted_current_term = true
+		case candidate:
+			// si es candidato, entonces responder solo si el term del mensaje es mayor
+			if msg.term > status.term {
+				status.raftStatus = follower
+				status.term = msg.term
+			}
+			// si es lider no hace falta responder
+		}
+	// si es una peticion de entries
 	case append_entries:
+		switch status.raftStatus {
+		case follower:
+			status.log = append(status.log, NodeLogEntry{msg: msg.entries[0], timestamp: time.Now()})
+		case candidate:
+			if msg.term > status.term { // si es candidato y le llega un mensaje con un term superior -> pasar a follower
+				status.raftStatus = follower
+				status.term = msg.term
+			}
+		case leader:
+			// si le llega un mensaje con term superior entonces pasar a follower de ese term
+			if msg.term > status.term {
+				status.raftStatus = follower
+				status.term = msg.term
+			}
+		}
 	}
 }
 
@@ -221,4 +254,13 @@ func addPeer(status *NodeStatus, ip string, port int) {
 func raft(wg *sync.WaitGroup, status *NodeStatus) {
 	defer wg.Done()
 	fmt.Println("from raft(): ", status.peers)
+	electionTimer()
+}
+
+func electionTimer() {
+	ticker := time.NewTicker(time.Millisecond * 150)
+	defer ticker.Stop()
+	for {
+
+	}
 }
