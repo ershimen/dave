@@ -86,6 +86,8 @@ type NodeStatus struct {
 	eventChan          chan Event
 }
 
+var promptPort string
+
 func main() {
 
 	status := NodeStatus{
@@ -96,8 +98,8 @@ func main() {
 		log:                []NodeLogEntry{},
 		raftStatus:         follower,
 		nodeStatus:         "alive",
-		electionTimeout:    150,
-		leaderHeartbeat:    50,
+		electionTimeout:    5000, // milliseconds
+		leaderHeartbeat:    3000, // milliseconds
 		eventChan:          make(chan Event, 25),
 	}
 
@@ -116,18 +118,19 @@ func main() {
 	defer tcpListener.Close()
 	fmt.Println("Listening on port", tcpListener.Addr().(*net.TCPAddr).Port)
 
-	// Run response handler
-	go listener(tcpListener, &status)
-
 	var wg sync.WaitGroup
 	wg.Add(2)
+
+	// Run response handler
+	go listener(&wg, tcpListener, &status)
 
 	// Run main algorithm
 	go raft(&wg, &status)
 
 	// Create cli
 	reader := bufio.NewReader(os.Stdin)
-	prompt := strconv.Itoa(tcpListener.Addr().(*net.TCPAddr).Port) + "> "
+	promptPort = strconv.Itoa(tcpListener.Addr().(*net.TCPAddr).Port)
+	prompt := promptPort + "> "
 	end := false
 	regexADD := regexp.MustCompile(`\s*ADD\s*(?P<args>[\w\W]*)`)
 	regexSTOP := regexp.MustCompile(`\s*STOP\s*(?P<args>[\w\W]*)`)
@@ -164,6 +167,9 @@ func main() {
 		// STOP command
 		if match := regexSTOP.FindSubmatch(line); len(match) > 0 {
 			fmt.Print("Stopping... ")
+			status.mutex.Lock()
+			status.nodeStatus = "dead"
+			status.mutex.Unlock()
 			end = true
 			continue
 		}
@@ -196,11 +202,14 @@ func addPeer(status *NodeStatus, ip string, port int) {
 /*
  * Function that listens for new incoming messages
  */
-func listener(l *net.TCPListener, status *NodeStatus) {
+func listener(wg *sync.WaitGroup, l *net.TCPListener, status *NodeStatus) {
+	defer wg.Done()
 	for {
 		var timeout time.Time
 		status.mutex.Lock()
 		if status.nodeStatus == "dead" {
+			close(status.eventChan) // terminate raft()
+			status.mutex.Unlock()
 			break
 		}
 		switch status.raftStatus {
@@ -322,7 +331,7 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 	//electionTimer(status)
 
 	for event := range status.eventChan {
-		print("raft", fmt.Sprintf("New event: %s", msgTypeToString(event.msg.MsgType)))
+		print("raft", fmt.Sprintf("New event: %s(%d)", msgTypeToString(event.msg.MsgType), event.msg.MsgType))
 		status.mutex.Lock()
 		switch event.msg.MsgType {
 		case requestVote:
@@ -382,6 +391,9 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 					status.term = event.msg.Term
 				}
 				// append entry
+				for _, e := range event.msg.Entries {
+					status.log = append(status.log, NodeLogEntry{msg: e, timestamp: time.Now()})
+				}
 			case candidate:
 				if event.msg.Term > status.term {
 					print("raft", fmt.Sprintf("Becoming follower of term %d", event.msg.Term))
@@ -413,6 +425,7 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 
 		status.mutex.Unlock()
 	}
+	print("raft", "Finished executing raft()")
 }
 
 func startElection(status *NodeStatus) {
@@ -466,7 +479,8 @@ func leaderHeartbeats(status *NodeStatus) {
 }
 
 func sendMsg(msg NodeMsg, addr string) {
-	print("sendMsg",
+	print(
+		"sendMsg",
 		fmt.Sprintf("Sending %s to %s",
 			msgTypeToString(msg.MsgType),
 			addr),
@@ -497,5 +511,5 @@ func msgTypeToString(msgType uint8) string {
 }
 
 func print(method string, msg string) {
-	fmt.Printf("[%s]: %s\n", method, msg)
+	fmt.Printf("[%s][%s]: %s\n", promptPort, method, msg)
 }
