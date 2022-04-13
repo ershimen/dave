@@ -73,6 +73,7 @@ type NodeStatus struct {
 	log                []NodeLogEntry
 	raftStatus         uint8
 	nodeStatus         string
+	electionTimeout    chan bool
 }
 
 func main() {
@@ -85,6 +86,7 @@ func main() {
 		log:                []NodeLogEntry{},
 		raftStatus:         follower,
 		nodeStatus:         "alive",
+		electionTimeout:    make(chan bool),
 	}
 
 	// Create tcp server
@@ -254,13 +256,78 @@ func addPeer(status *NodeStatus, ip string, port int) {
 func raft(wg *sync.WaitGroup, status *NodeStatus) {
 	defer wg.Done()
 	fmt.Println("from raft(): ", status.peers)
-	electionTimer()
+	//electionTimer(status)
+
+	for {
+		status.mutex.Lock()
+		currentStatus := status.raftStatus
+		status.mutex.Unlock()
+
+		switch currentStatus {
+		case follower, candidate:
+			// election timeout
+			select {
+			case <-status.electionTimeout:
+				// no timetout
+			case <-time.After(150 * time.Millisecond):
+				// start election
+				startElection(status)
+			}
+		case leader:
+			<-time.After(50 * time.Millisecond)
+			// send entries to peers
+			go func() {
+			}()
+		default:
+			fmt.Println("Incorrect status")
+		}
+	}
 }
 
-func electionTimer() {
+func electionTimer(status *NodeStatus) {
 	ticker := time.NewTicker(time.Millisecond * 150)
 	defer ticker.Stop()
 	for {
+		select {
+		case <-status.electionTimeout:
+			// incoming message
+		case <-time.After(50 * time.Millisecond):
+			// start election
+			startElection(status)
+		}
 
+	}
+}
+
+func startElection(status *NodeStatus) {
+	status.mutex.Lock()
+	defer status.mutex.Unlock()
+	status.raftStatus = candidate
+	// send request vote to peers
+	/*
+		for _, p := range status.peers {
+			go func() {
+
+			}()
+		}
+	*/
+}
+
+func sendVoteRequest(status *NodeStatus, peer NodeAddr) {
+	if conn, err := net.Dial("tcp", peer.ip+":"+strconv.Itoa(int(peer.port))); err == nil {
+		//conn.Write()
+		msg := NodeMsg{msg_type: request_vote, term: status.term, entries: nil}
+		type NodeMsg struct {
+			msg_type uint8
+			term     int
+			entries  []string
+		}
+		if jsonMsg, err := json.Marshal(msg); err == nil {
+			conn.Write(jsonMsg)
+		} else {
+			fmt.Printf("Error marshaling msg: %s\n", msg)
+		}
+	} else {
+		fmt.Printf("Error dialing %s:%d\n", peer.ip, peer.port)
 	}
 }
