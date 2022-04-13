@@ -82,6 +82,7 @@ type NodeStatus struct {
 	raftStatus         uint8
 	nodeStatus         string
 	electionTimeout    int64 // milliseconds
+	leaderHeartbeat    int64
 	eventChan          chan Event
 }
 
@@ -96,6 +97,7 @@ func main() {
 		raftStatus:         follower,
 		nodeStatus:         "alive",
 		electionTimeout:    150,
+		leaderHeartbeat:    50,
 		eventChan:          make(chan Event, 25),
 	}
 
@@ -351,6 +353,7 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 					go sendMsg(NodeMsg{MsgType: grantVote, Term: event.msg.Term}, event.sender)
 				}
 			}
+
 		case grantVote:
 			switch status.raftStatus {
 			case follower:
@@ -360,59 +363,56 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 				if event.msg.Term == status.term {
 					status.received_votes++
 					if int(status.received_votes) > (len(status.peers)+1)/2 {
-						print("raft", fmt.Sprintf("Becoming leader of term %d", status.term))
+						print("raft", fmt.Sprintf("Becoming leader of term %d with %d votes", status.term, status.received_votes))
 						status.raftStatus = leader
-						go leaderHeartbeat(status)
+						go leaderHeartbeats(status)
 					}
-
 				}
-				/*
-					else if reply.Term == savedCurrentTerm {
-						if reply.VoteGranted {
-						  votesReceived++
-						  if votesReceived*2 > len(cm.peerIds)+1 {
-							// Won the election!
-							cm.dlog("wins election with %d votes", votesReceived)
-							cm.startLeader()
-							return
-						  }
-						}
-					  }*/
 			case leader:
 				// no hacer nada porque ya se ha conseguido ser lider
 			}
 
 		case appendEntries:
-
-		case followerTimeout:
-		}
-		status.mutex.Unlock()
-	}
-
-	/*
-		for {
-			currentStatus := status.raftStatus
-
-			switch currentStatus {
-			case follower, candidate:
-				// election timeout
-				select {
-				case <-status.electionTimeoutChan:
-					// timetout
-				case <-time.After(150 * time.Millisecond):
-					// start election
-					startElection(status)
+			switch status.raftStatus {
+			case follower:
+				if event.msg.Term > status.term {
+					print("raft", fmt.Sprintf("Becoming follower of term %d", event.msg.Term))
+					status.voted_current_term = true
+					status.raftStatus = follower
+					status.term = event.msg.Term
+				}
+				// append entry
+			case candidate:
+				if event.msg.Term > status.term {
+					print("raft", fmt.Sprintf("Becoming follower of term %d", event.msg.Term))
+					status.voted_current_term = true
+					status.raftStatus = follower
+					status.term = event.msg.Term
 				}
 			case leader:
-				<-time.After(50 * time.Millisecond)
-				// send entries to peers
-				go func() {
-				}()
-			default:
-				fmt.Println("Incorrect status")
+				if event.msg.Term > status.term {
+					print("raft", fmt.Sprintf("Becoming follower of term %d", event.msg.Term))
+					status.voted_current_term = true
+					status.raftStatus = follower
+					status.term = event.msg.Term
+				}
+			}
+
+		case followerTimeout:
+			switch status.raftStatus {
+			case follower:
+				go startElection(status)
+				// start election
+			case candidate:
+				// start another election
+				go startElection(status)
+			case leader:
+				// ignore
 			}
 		}
-	*/
+
+		status.mutex.Unlock()
+	}
 }
 
 /*
@@ -455,10 +455,11 @@ func startElection(status *NodeStatus) {
 	}
 }
 
-func leaderHeartbeat(status *NodeStatus) {
+func leaderHeartbeats(status *NodeStatus) {
 	for {
 		status.mutex.Lock()
 		if status.nodeStatus == "dead" || status.raftStatus != leader {
+			status.mutex.Unlock()
 			return
 		}
 
@@ -467,6 +468,7 @@ func leaderHeartbeat(status *NodeStatus) {
 			Term:    status.term,
 			Entries: nil,
 		}
+		timeout := status.leaderHeartbeat
 		status.mutex.Unlock()
 
 		// send AppendEntries to peers
@@ -474,6 +476,8 @@ func leaderHeartbeat(status *NodeStatus) {
 			go sendMsg(msg, p.ip+":"+strconv.Itoa(int(p.port)))
 		}
 
+		// wait for next hearbeat
+		<-time.After(time.Duration(timeout) * time.Millisecond)
 	}
 
 }
