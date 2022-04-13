@@ -415,23 +415,6 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 	}
 }
 
-/*
-func electionTimer(status *NodeStatus) {
-	ticker := time.NewTicker(time.Millisecond * 150)
-	defer ticker.Stop()
-	for {
-		select {
-		case <-status.electionTimeoutChan:
-			// incoming message
-		case <-time.After(50 * time.Millisecond):
-			// start election
-			startElection(status)
-		}
-
-	}
-}
-*/
-
 func startElection(status *NodeStatus) {
 
 	print("startElection", "Starting election")
