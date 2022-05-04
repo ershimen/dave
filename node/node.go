@@ -628,6 +628,17 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 		fmt.Println("Error encoding msg:", msg)
 	}
 	conn.Close()
+
+	conn, err = net.Dial("tcp", "localhost:12345")
+	if err != nil {
+		fmt.Printf("Error dialing %s\n", addr)
+		return
+	}
+	enc = json.NewEncoder(conn)
+	if enc.Encode(msg) != nil {
+		fmt.Println("Error encoding msg:", msg)
+	}
+	conn.Close()
 }
 
 func msgTypeToString(msgType uint8) string {
