@@ -2,3 +2,5 @@
 broker/*.exe
 node/*.exe
 graph/*
+pruebas*
+dave/node_modules/*
