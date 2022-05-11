@@ -9,7 +9,14 @@ let mainWindow;
 // Listen for app to be ready
 app.on('ready', function() {
     // Create new window
-    mainWindow = new BrowserWindow({});
+    mainWindow = new BrowserWindow({
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+        },
+        width: 1200,
+        height: 600,
+    });
     // Load html into window
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'mainWindow.html'),

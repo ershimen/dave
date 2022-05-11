@@ -7,12 +7,17 @@
     <title>DAVE</title>
 
     <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
-    <link rel="style.css">
+    <link rel="stylesheet" type="text/css" href="style.css"></link>
 
 </head>
 <body>
     <h1>Distributed Algorithms Visualization Environment</h1>
     <div id="mynetwork"></div>
+    <input type="button" id="start" value="start_udp" onclick="start_server();">
+    <input type="button" id="stop" value="stop_udp" onclick="stop_server();">
+    <input type="button" id="add" value="add_node" onclick="add_node();">
+    <input type="text" id="node_addr">
     <script type="text/javascript" src="graphUpdater.js"></script>
+    <input type="button" id="start_all" value="start all" onclick="start_all();">
 </body>
 </html>
