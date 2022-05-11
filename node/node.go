@@ -141,6 +141,9 @@ func main() {
 	for !end {
 		//fmt.Print(prompt)
 		line, _, err := reader.ReadLine()
+		//lineInput, err := reader.ReadString('\n')
+		//line := []byte(lineInput)
+
 		if err != nil {
 			print("main", "Error reading line from stdin.")
 			os.Exit(1)
@@ -161,6 +164,7 @@ func main() {
 
 				if err != nil || len(port) == 0 {
 					print("main", fmt.Sprintf("Error: port value \"%s\"is not an integer.\n", port))
+					continue
 				}
 				status.mutex.Lock()
 				status.peers = append(status.peers, NodeAddr{ip, uint16(nPort)})
@@ -628,17 +632,19 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 		fmt.Println("Error encoding msg:", msg)
 	}
 	conn.Close()
-
-	conn, err = net.Dial("tcp", "localhost:12345")
-	if err != nil {
-		fmt.Printf("Error dialing %s\n", addr)
-		return
-	}
-	enc = json.NewEncoder(conn)
-	if enc.Encode(msg) != nil {
-		fmt.Println("Error encoding msg:", msg)
-	}
-	conn.Close()
+	/*
+		// para cuando no hay sniffer
+		conn, err = net.Dial("tcp", "localhost:12345")
+		if err != nil {
+			fmt.Printf("Error dialing %s\n", addr)
+			return
+		}
+		enc = json.NewEncoder(conn)
+		if enc.Encode(msg) != nil {
+			fmt.Println("Error encoding msg:", msg)
+		}
+		conn.Close()
+	*/
 }
 
 func msgTypeToString(msgType uint8) string {
