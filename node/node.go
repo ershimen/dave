@@ -632,19 +632,20 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 		fmt.Println("Error encoding msg:", msg)
 	}
 	conn.Close()
-	/*
-		// para cuando no hay sniffer
-		conn, err = net.Dial("tcp", "localhost:12345")
-		if err != nil {
-			fmt.Printf("Error dialing %s\n", addr)
-			return
-		}
-		enc = json.NewEncoder(conn)
-		if enc.Encode(msg) != nil {
-			fmt.Println("Error encoding msg:", msg)
-		}
-		conn.Close()
-	*/
+
+	fmt.Println("sending to localhost:3333")
+	// para cuando no hay sniffer
+	conn2, err2 := net.Dial("udp", "0.0.0.0:3333")
+	if err2 != nil {
+		fmt.Printf("Error dialing %s\n", addr)
+		return
+	}
+	enc2 := json.NewEncoder(conn2)
+	if enc2.Encode(msg) != nil {
+		fmt.Println("Error encoding msg:", msg)
+	}
+	conn2.Close()
+	fmt.Println("finished sending to localhost:3333")
 }
 
 func msgTypeToString(msgType uint8) string {

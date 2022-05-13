@@ -63,9 +63,8 @@ function start_server() {
     });
 
     server.on('message', function(msg, rinfo) {
-        print('start_server', `msg from ${rinfo.address}:${rinfo.port}`);
+        print('start_server', `msg from ${rinfo.address}:${rinfo.port}\n${msg}`);
         var parsed_msg = JSON.parse(msg);
-        print('start_server', parsed_msg);
         updateGraph(parsed_msg);
     });
 
