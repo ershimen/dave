@@ -216,6 +216,16 @@ function addNetworkEdge(from, to) {
     }
 }
 
+function start_selected() {
+    for (const node of network.getSelectedNodes()) {
+        udp_client.send('{"type":"START", "args":"START"}', nodes[node].port, nodes[node].ip, function (err, bytes) {
+            if (!err) {
+                print('start_all', `Sent START to ${nodes[node].ip}`);
+            }
+        });
+    }
+}
+
 function start_all() {
     for (var node in nodes) {
         udp_client.send('{"type":"START", "args":"START"}', nodes[node].port, nodes[node].ip, function (err, bytes) {
