@@ -15,13 +15,16 @@ app.on('ready', function() {
             contextIsolation: false,
         },
         width: 1200,
-        height: 600,
+        height: 800,
+        minWidth: 600,
+        minHeight: 500,
+        frame: true,
     });
     // Load html into window
     mainWindow.loadURL(url.format({
         pathname: path.join(__dirname, 'mainWindow.html'),
         protocol: 'file:',
-        slashes: true
+        slashes: true,
     }));
 
 });

@@ -139,7 +139,7 @@ function add_node() {
     if (network == null) {
         return;
     }
-    var node_addr = document.getElementById('node_addr');
+    var node_addr = document.getElementById('txt-node-addr');
     new_node = node_addr.value;
     if (new_node == '') {
         print('add_node', 'Empty value');

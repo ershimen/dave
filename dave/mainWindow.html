@@ -13,21 +13,29 @@
 
 </head>
 <body>
-    <h1>Distributed Algorithms Visualization Environment</h1>
-    <div id="mynetwork"></div>
-    <input type="button" id="start" value="start_udp" onclick="start_server();">
-    <input type="button" id="stop" value="stop_udp" onclick="stop_server();">
-    <input type="button" id="add" value="add_node" onclick="add_node();">
-    <input type="text" id="node_addr">
+    <div id="main-container">
+        <header id="titlebar"></header>
+        <div id="container">
+            <div id="tools">
+                <h1 class="tool-h1">Control Panel</h1>
+                <input type="button" id="button-start" class="tool-flex tool-button" value="Start UDP server" onclick="start_server();">
+                <input type="button" id="button-stop" class="tool-flex tool-button" value="Stop UDP server" onclick="stop_server();">
+                <input type="button" id="button-add" class="tool-flex tool-button" value="Add node" onclick="add_node();">
+                <input type="text" id="txt-node-addr" class="tool-flex tool-input">
+                <input type="button" id="button-start-selected" class="tool-flex tool-button" value="Start selected nodes" onclick="start_selected();">
+                <input type="button" id="button-start-all" class="tool-flex tool-button" value="Start all nodes" onclick="start_all();">
+                <input type="button" id="button-stop-all" class="tool-flex tool-button" value="Stop all nodes" onclick="stop_all();">
+                <input type="button" id="button-animation" class="tool-flex tool-button" value="Animation" onclick="clickMe()">
+                <!--
+                <input type="button" value="edge1" onclick="edge1()">
+                <input type="button" value="edge2" onclick="edge2()">
+                <input type="button" value="edge3" onclick="edge3()">
+                -->
+            </div>
+            <div id="mynetwork"></div>
+        </div>
+    </div>
     <script type="text/javascript" src="graphUpdater.js"></script>
-    <input type="button" id="start_selected" value="start selected" onclick="start_selected();">
-    <input type="button" id="start_all" value="start all" onclick="start_all();">
-    <input type="button" id="stop_all" value="stop all" onclick="stop_all();">
-    <input type="button" value="animation" onclick="clickMe()">
-    <!--
-    <input type="button" value="edge1" onclick="edge1()">
-    <input type="button" value="edge2" onclick="edge2()">
-    <input type="button" value="edge3" onclick="edge3()">
-    -->
+    
 </body>
 </html>
