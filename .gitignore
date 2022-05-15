@@ -6,3 +6,4 @@ pruebas*
 dave/node_modules/*
 dave/prueba.py
 .vscode
+*_ignore*
