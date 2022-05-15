@@ -43,10 +43,12 @@ def add_port_packet_filter(packet_filter, port):
     return packet_filter + " or tcp port %d" % port
 
 # proceso que interactua con el nodo
-def udp_listener(process, packet_filter):
+def udp_listener(process, packet_filter, node_port):
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as listener:
         listener.bind(("", 0))
-        print("Listening on port %d" % listener.getsockname()[1])
+        listener_port = listener.getsockname()[1]
+        print("Listening on port %d" % listener_port)
+        print("localhost:", listener_port, ":", node_port, sep='')
         end = False
         while not end:
             msg_raw, addr = listener.recvfrom(2048)
@@ -62,8 +64,11 @@ def udp_listener(process, packet_filter):
                 end = True
                 continue
             if msg["type"] == "START":
-                sniffer_thread = Thread(target=sniffer, args=(packet_filter,))
-                sniffer_thread.start()
+                #sniffer_thread = Thread(target=sniffer, args=(packet_filter,))
+                #sniffer_thread.start()
+                continue
+            if msg["type"] == "ADD":
+                print("Adding:", final_msg)
                 continue
             # if add
 
@@ -119,7 +124,7 @@ def main():
     #process.stdin.flush()
 
     # Start listener socket
-    udp_listener_thread = Thread(target=udp_listener, args=(process, packet_filter))
+    udp_listener_thread = Thread(target=udp_listener, args=(process, packet_filter, node_port))
     udp_listener_thread.start()
 
 
