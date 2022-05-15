@@ -48,7 +48,9 @@ def udp_listener(process, packet_filter, node_port):
         listener.bind(("", 0))
         listener_port = listener.getsockname()[1]
         print("Listening on port %d" % listener_port)
-        print("localhost:", listener_port, ":", node_port, sep='')
+        print("localhost:%d:%s" % (listener_port, node_port))
+        print("ncat.exe -u 127.0.0.1", listener_port)
+        print("""{"type": "STOP", "args":"STOP"}""")
         end = False
         while not end:
             msg_raw, addr = listener.recvfrom(2048)
@@ -109,8 +111,8 @@ def main():
     node_port = ""
     while process.poll() is None:
         line = process.stdout.readline().decode()
-        print(line, end='')
         if line != "":
+            print(">>> ", line, sep='', end='')
             node_port = line[1:line.index(']')]
             break
     print("node_port: \"%s\"" % node_port)
@@ -130,7 +132,8 @@ def main():
 
     while process.poll() is None:
         line = process.stdout.readline().decode()
-        print(line, end='')
+        if line != "":
+            print(">>> ", line, sep='', end='')
 
     # Wait for processes to end
     #sniffer_thread.join()
