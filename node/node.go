@@ -52,6 +52,16 @@ type NodeMsg struct {
 	SenderPort uint16 // porque no se sabe la ip:puerto del origen (se sabe la ip solo), el puerto puede ser otro proceso que no es el que hace net.Dial y conn.Write
 }
 
+type UIMsg struct {
+	MsgType uint8
+	Term    int
+	Enties  []string
+	SrcPort uint16
+	SrcIp   string
+	DstPort uint16
+	DstIp   string
+}
+
 type Event struct {
 	msg    NodeMsg
 	sender string // ip (the port is in msg.SenderPort)
@@ -84,6 +94,7 @@ type NodeStatus struct {
 }
 
 var promptPort string
+var selfPort uint16
 
 func main() {
 
@@ -100,9 +111,9 @@ func main() {
 	}
 	defer tcpListener.Close()
 
-	selfPort := uint16(tcpListener.Addr().(*net.TCPAddr).Port)
+	selfPort = uint16(tcpListener.Addr().(*net.TCPAddr).Port)
 	promptPort = strconv.Itoa(int(selfPort))
-	print("main", fmt.Sprintf("Listening on port %d", tcpListener.Addr().(*net.TCPAddr).Port))
+	print("main", fmt.Sprintf("Listening on port %d", selfPort))
 
 	var wg sync.WaitGroup
 
@@ -633,6 +644,15 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 	}
 	conn.Close()
 
+	uiMsg := UIMsg{
+		MsgType: msg.MsgType,
+		Term:    msg.Term,
+		Enties:  msg.Entries,
+		SrcPort: selfPort,
+		SrcIp:   "localhost",
+		DstPort: port,
+		DstIp:   ip,
+	}
 	fmt.Println("sending to localhost:3333")
 	// para cuando no hay sniffer
 	conn2, err2 := net.Dial("udp", "0.0.0.0:3333")
@@ -641,8 +661,8 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 		return
 	}
 	enc2 := json.NewEncoder(conn2)
-	if enc2.Encode(msg) != nil {
-		fmt.Println("Error encoding msg:", msg)
+	if enc2.Encode(uiMsg) != nil {
+		fmt.Println("Error encoding msg:", uiMsg)
 	}
 	conn2.Close()
 	fmt.Println("finished sending to localhost:3333")
