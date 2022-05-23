@@ -228,73 +228,6 @@ func main() {
 
 	wg.Wait()
 	print("main", "Stopped node.")
-
-	/*
-		// Create cli
-		reader := bufio.NewReader(os.Stdin)
-		promptPort = strconv.Itoa(tcpListener.Addr().(*net.TCPAddr).Port)
-		prompt := promptPort + "> "
-		end := false
-		regexADD := regexp.MustCompile(`\s*ADD\s*(?P<args>[\w\W]*)`)
-		regexSTOP := regexp.MustCompile(`\s*STOP\s*(?P<args>[\w\W]*)`)
-		regexPEERS := regexp.MustCompile(`\s*PEERS\s*(?P<args>[\w\W]*)`)
-
-		fmt.Println("Node console")
-		for !end {
-			fmt.Print(prompt)
-			line, _, err := reader.ReadLine()
-			if err != nil {
-				fmt.Fprint(os.Stderr, "Error reading line from stdin.")
-				break
-			}
-			// ADD command
-			if match := regexADD.FindSubmatch(line); len(match) > 0 {
-				splittedArgs := strings.Split(string(match[1]), ":")
-				switch {
-				case len(splittedArgs) != 2:
-					fmt.Println("Error: could not read argument string, must have \"ip:port\" format.")
-				default:
-					ip := splittedArgs[0]
-					port := splittedArgs[1]
-					nPort, err := strconv.Atoi(port)
-					fmt.Println("ip: \"" + ip + "\"")
-					fmt.Println("port: \"" + port + "\"")
-					if err != nil || len(port) == 0 {
-						fmt.Printf("Error: port value \"%s\"is not an integer.\n", port)
-					}
-					addPeer(&status, ip, nPort)
-					fmt.Printf("Added peer %s:%d\n", ip, nPort)
-				}
-				continue
-			}
-			// STOP command
-			if match := regexSTOP.FindSubmatch(line); len(match) > 0 {
-				fmt.Print("Stopping... ")
-				status.mutex.Lock()
-				status.nodeStatus = "dead"
-				status.mutex.Unlock()
-				end = true
-				continue
-			}
-			// PEERS command
-			if match := regexPEERS.FindSubmatch(line); len(match) > 0 {
-				fmt.Println("Peers:")
-				for _, v := range status.peers {
-					fmt.Println("\t" + v.ip + ":" + strconv.Itoa(int(v.port)))
-				}
-				fmt.Println()
-				continue
-			}
-			fmt.Println("Unrecognized command. Aviable commands are:")
-			fmt.Println("\tADD: add peer")
-			fmt.Println("\tPEERS: lists peers")
-			fmt.Println("\tSTOP: stop node.")
-		}
-		if end { // porque podria hacer break en readstring()
-			wg.Wait()
-			fmt.Println("Stopped node.")
-		}
-	*/
 }
 
 func addPeer(status *NodeStatus, ip string, port int) {
@@ -351,16 +284,6 @@ func listener(wg *sync.WaitGroup, l *net.TCPListener, status *NodeStatus) {
 		}
 
 		go responseHandler(conn, status)
-
-		/*
-			buffer := make([]byte, 2048)
-			_, err = conn.Read(buffer)
-			if err != nil {
-				fmt.Println("Error reading from socket")
-				os.Exit(1)
-			}
-			go responseHandler(conn, buffer, status)
-		*/
 	}
 
 	print("listener", "Exiting listener goroutine...")
@@ -387,50 +310,6 @@ func responseHandler(conn net.Conn, status *NodeStatus) {
 		msg:    msg,
 		sender: conn.RemoteAddr().(*net.TCPAddr).IP.String(),
 	}
-
-	/*
-		status.mutex.Lock()
-		defer status.mutex.Unlock()
-
-		switch msg.MsgType {
-		// si es una peticion de votacion
-		case requestVote:
-			switch status.raftStatus {
-			case follower:
-				// responder con aceptar
-				// poner voted_current_term a true
-				status.voted_current_term = true
-			case candidate:
-				// si es candidato, entonces responder solo si el term del mensaje es mayor
-				if msg.Term > status.term {
-					status.raftStatus = follower
-					status.term = msg.Term
-				} else if msg.Term == status.term {
-					//
-
-				}
-
-				// si es lider no hace falta responder
-			}
-		// si es una peticion de entries
-		case append_entries:
-			switch status.raftStatus {
-			case follower:
-				status.log = append(status.log, NodeLogEntry{msg: msg.entries[0], timestamp: time.Now()})
-			case candidate:
-				if msg.term > status.term { // si es candidato y le llega un mensaje con un term superior -> pasar a follower
-					status.raftStatus = follower
-					status.term = msg.term
-				}
-			case leader:
-				// si le llega un mensaje con term superior entonces pasar a follower de ese term
-				if msg.term > status.term {
-					status.raftStatus = follower
-					status.term = msg.term
-				}
-			}
-		}
-	*/
 }
 
 /*
