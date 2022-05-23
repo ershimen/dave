@@ -224,30 +224,36 @@ function addNetworkEdge(from, to) {
 }
 
 function start_selected() {
+    var node_aux = null;
     for (const node of network.getSelectedNodes()) {
-        udp_client.send('{"type":"START", "args":"START"}', nodes[node].port, nodes[node].ip, function (err, bytes) {
+        node_aux = nodes[node];
+        udp_client.send('{"type":"START", "args":"START"}', node_aux.port, node_aux.ip, function (err, bytes) {
             if (!err) {
-                print('start_all', `Sent START to ${nodes[node].ip}`);
+                print('start_all', `Sent START to ${node_aux.ip}:${node_aux.port}`);
             }
         });
     }
 }
 
 function start_all() {
+    var node_aux = null;
     for (var node in nodes) {
-        udp_client.send('{"type":"START", "args":"START"}', nodes[node].port, nodes[node].ip, function (err, bytes) {
+        node_aux = nodes[node];
+        udp_client.send('{"type":"START", "args":"START"}', node_aux.port, node_aux.ip, function (err, bytes) {
             if (!err) {
-                print('start_all', `Sent START to ${nodes[node].ip}`);
+                print('start_all', `Sent START to ${node_aux.ip}:${node_aux.port}`);
             }
         });
     };
 }
 
 function stop_all() {
+    var node_aux = null;
     for (var node in nodes) {
-        udp_client.send('{"type":"STOP", "args":"STOP"}', nodes[node].port, nodes[node].ip, function (err, bytes) {
+        node_aux = nodes[node];
+        udp_client.send('{"type":"STOP", "args":"STOP"}', node_aux.port, node_aux.ip, function (err, bytes) {
             if (!err) {
-                print('start_all', `Sent STOP to ${nodes[node].ip}`);
+                print('start_all', `Sent STOP to ${node_aux.ip}${node_aux.port}`);
             }
         });
     };
@@ -263,62 +269,3 @@ function clickMe() {
         {edge:3, trafficSize:5, isBackward: true}   // animates the traffic backward on the edge
     ]);
 }
-
-/*
-function start() {
-    console.log("aaaaa");
-
-    const { exec, ChildProcess } = require('child_process');
-   
-    const ls = exec('dir', function (error, stdout, stderr) {
-      if (error) {
-        console.log(error.stack);
-        console.log('Error code: ' + error.code);
-        console.log('Signal received: ' + error.signal);
-      }
-      console.log('Child Process STDOUT: ' + stdout);
-      console.log('Child Process STDERR: ' + stderr);
-    });
-    
-    ls.on('exit', function (code) {
-      console.log('Child process exited with exit code ' + code);
-    });
-
-}
-
-function start_raft() {
-    console.log("start_bg");
-    var spawn = require('child_process').spawn;
-
-    var process = spawn('go', ['run', '../node/node.go']);
-
-    process.stdout.setEncoding('utf-8');
-    process.stdout.on('data', function(data) {
-        console.log(data);
-    });
-
-    process.on('close', function(code) {
-        console.log('exit:' + code);
-    })
-
-    return process;
-}
-
-var process = null;
-
-function start_bg() {
-    process = start_raft();
-}
-
-function send_start() {
-    if (process != null) {
-        console.log("sending start...");
-        process.stdin.write("START\n");
-    }
-    else {
-        console.log("is null");
-    }
-}
-
-*/
-
