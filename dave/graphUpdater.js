@@ -8,9 +8,11 @@ function print(method, s) {
 }
 
 var network_nodes = new vis.DataSet([
+    /*
     {id: 1, label: 'Node 1'}, 
     {id: 2, label: 'Node 2'}, 
     {id: 3, label: 'Node 3'},
+    */
 ]);
 
 
@@ -24,8 +26,8 @@ for (var i=0; i<6; i++) {
     n_nodes++;
 }
 */
-
 var network_edges = new vis.DataSet([
+    /*
     {id:1, from:1, to:1}, 
     {id:2, from:2, to:1},
     {id:3, from:2, to:3},
@@ -174,25 +176,30 @@ function add_node() {
 }
 
 function addNetworkEdge(from, to) {
-    console.log("adding edge");
+    //console.log("adding edge");
     let new_edge_id1 = `${from}_${to}`;
     let new_edge_id2 = `${to}_${from}`;
-    console.log(`new_id: ${new_edge_id1}`);
+    /*
+    console.log(`new_id1: ${new_edge_id1}`);
+    console.log(`new_id2: ${new_edge_id2}`);
+    console.log(`from: ${from}`);
+    console.log(`to: ${to}`);
+    */
     if (network_edges.get(new_edge_id1) == null) {
 
         let from_node = nodes[from];
         let to_node = nodes[to];
 
-        let msg = `{"type":"ADD", "args":"ADD ${to_node.ip}:${to_node.realPort}"}`;
-        udp_client.send(msg, from_node.port, from_node.ip, function (err, bytes) {
+        let msg1 = `{"type":"ADD", "args":"ADD ${to_node.ip}:${to_node.realPort}"}`;
+        udp_client.send(msg1, from_node.port, from_node.ip, function (err, bytes) {
             if (!err) {
-                print('addNetworkEdge', `Sent "${msg}" to ${from_node.ip}:${from_node.port}`);
+                print('addNetworkEdge', `Sent-1 "${msg1}" to ${from_node.ip}:${from_node.port}`);
             }
         });
-        msg = `{"type":"ADD", "args":"ADD ${from_node.ip}:${from_node.realPort}"}`;
-        udp_client.send(msg, to_node.port, to_node.ip, function (err, bytes) {
+        let msg2 = `{"type":"ADD", "args":"ADD ${from_node.ip}:${from_node.realPort}"}`;
+        udp_client.send(msg2, to_node.port, to_node.ip, function (err, bytes) {
             if (!err) {
-                print('addNetworkEdge', `Sent "${msg}" to ${to_node.ip}:${to_node.port}`);
+                print('addNetworkEdge', `Sent-2 "${msg2}" to ${to_node.ip}:${to_node.port}`);
             }
         });
 
