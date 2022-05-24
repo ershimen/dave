@@ -108,6 +108,7 @@ function start_server() {
         network.animateTraffic([{
             edge: e,
             trafficSize: 4,
+            
         }]);
         updateGraph(parsed_msg);
     });
@@ -215,6 +216,9 @@ function addNetworkEdge(from, to) {
             to: from,
             label: `${new_edge_id2}`,
         });
+
+        console.log(`Added edge1: ${JSON.stringify(network_edges.get(new_edge_id1))}`);
+        console.log(`Added edge2: ${JSON.stringify(network_edges.get(new_edge_id2))}`);
         
 
     }
