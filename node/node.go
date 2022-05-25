@@ -132,10 +132,6 @@ func main() {
 		eventChan:          make(chan Event, 25),
 	}
 
-	// startup cli
-	if len(os.Args) > 1 && os.Args[1] == "--nocli" {
-		return
-	}
 	print("main", "Aviable commands are:")
 	print("main", "\tADD: add peer")
 	print("main", "\tPEERS: lists peers")
@@ -409,7 +405,7 @@ func raft(wg *sync.WaitGroup, status *NodeStatus) {
 			case follower:
 				if event.msg.Term > status.term {
 					print("raft", fmt.Sprintf("Becoming follower of term %d", event.msg.Term))
-					status.voted_current_term = true
+					status.voted_current_term = true // poner a false???
 					status.raftStatus = follower
 					status.term = event.msg.Term
 				}
