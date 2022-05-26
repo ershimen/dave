@@ -15,17 +15,13 @@ body {
 }
 
 #container {
-
     grid-row: 2;
-
     display: grid;
-    
     grid-template-columns: 200px 1fr;
-
     gap: 10px;
     padding: 10px;
     box-sizing: border-box;
-
+    
     height: calc(100vh - 40px);
 }
 
@@ -88,9 +84,7 @@ body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-
     row-gap: 10px;
-
 }
 
 #mynetwork {
@@ -108,7 +102,6 @@ body {
 
     border: 1px solid #C2847A;
     width: 150px;
-
 }
 
 .tool-button {
