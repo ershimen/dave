@@ -262,14 +262,3 @@ function stop_all() {
         });
     };
 }
-
-function clickMe() {
-    // **************************************
-    // Here is the code for animation
-    //
-    network.animateTraffic([
-        {edge:current_node_id-1},                           // specify forward animation with traffic size=1
-        {edge:2, trafficSize:2},            // specify the size of traffic (circle animated)
-        {edge:3, trafficSize:5, isBackward: true}   // animates the traffic backward on the edge
-    ]);
-}
