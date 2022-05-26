@@ -16,7 +16,7 @@ app.on('ready', function() {
         },
         width: 1200,
         height: 800,
-        minWidth: 600,
+        minWidth: 670,
         minHeight: 500,
         frame: true,
     });
