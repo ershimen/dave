@@ -47,17 +47,50 @@ var data = {
     nodes: network_nodes,
     edges: network_edges,
 };
+
+var locales = {
+    en: {
+        edit: 'Edit',
+        del: 'Delete selected',
+        back: 'Back',
+        addNode: 'Add Node',
+        addEdge: 'Add Connection',
+        editNode: 'Edit Node',
+        editEdge: 'Edit Connection',
+        addDescription: 'Click in an empty space to place a new node.',
+        edgeDescription: 'Click on a node and drag the edge to another node to connect them.',
+        editEdgeDescription: 'Click on the control points and drag them to a node to connect to it.',
+        createEdgeError: 'Cannot link edges to a cluster.',
+        deleteClusterError: 'Clusters cannot be deleted.',
+        editClusterError: 'Clusters cannot be edited.'
+      }
+};
+
 var options = {
+    locale: 'en',
+    locales: locales,
+    nodes: {  
+        shape: 'box',
+        color: '#C2847A',
+        font: {
+            align: 'left',
+        },
+    },
     physics: {
         enabled: false,
     },
+    interaction: {
+        multiselect: true,
+    },
     manipulation: {
         enabled: true,
+        addNode: false,
+        /*
         addNode: function(data, callback) {
             console.log("adding node");
             network_nodes.add({id: current_node_id, label: current_node_id})
             current_node_id++;
-        },
+        },*/
         editEdge: function(data, callback) {
             console.log("editing node");
 
@@ -69,7 +102,7 @@ var options = {
         editEdge: function(data, callback) {
             console.log("editing edge");
         },
-    }
+    },
 };
 
 // initialize your network!
@@ -82,6 +115,26 @@ function updateGraph(msg) {
     switch (msg["type"]) {
         default:
             break;
+    }
+}
+
+var server_status = document.getElementById('manager-status');
+var server_button = document.getElementById('server-button');
+
+console.log(server_button);
+
+function server_toggle() {
+    if (server_running) {
+        stop_server();
+        server_status.innerHTML = 'Offline';
+        server_status.style.color = 'red';
+        server_button.innerHTML = 'Start UDP Server';
+    }
+    else {
+        start_server();
+        server_status.innerHTML = 'Online';
+        server_status.style.color = 'green';
+        server_button.innerHTML = 'Stop UDP Server';
     }
 }
 
@@ -101,15 +154,20 @@ function start_server() {
         print('start_server', `msg from ${rinfo.address}:${rinfo.port}\n${msg}`);
         var parsed_msg = JSON.parse(msg);
         var e = `${parsed_msg.SrcIp}:${parsed_msg.SrcPort}_${parsed_msg.DstIp}:${parsed_msg.DstPort}`
-        // if (network_edges.get(e) == null) { // probar en el sentido contrario
-        //     e = `${parsed_msg.DstIp}:${parsed_msg.DstPort}_${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`
-        // }
+
         console.log(`Edge: ${e}`);
         network.animateTraffic([{
             edge: e,
             trafficSize: 4,
             
         }]);
+        
+        console.log(JSON.stringify(update_node));
+
+        network.updateClusteredNode(`${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`, {
+            label: 'new_label',
+        });
+
         updateGraph(parsed_msg);
     });
 
@@ -141,7 +199,7 @@ function stop_server() {
 function add_node() {
     if (network == null) {
         return;
-    }
+    };
     var node_addr = document.getElementById('txt-node-addr');
     new_node = node_addr.value;
     if (new_node == '') {
@@ -150,10 +208,9 @@ function add_node() {
     }
     else {
         print('add_node', 'Non empty');
-    }
+    };
     
     var match = new_node.match(/(?<ip>[.\w]+):(?<port>\d+):(?<realPort>\d+)/);
-
     if (match == null) {
         print('add_node', 'Not ip:port:port format');
         return;
@@ -166,13 +223,14 @@ function add_node() {
         realPort: parseInt(match.groups.realPort),
         process: null,
     };
-
     print('add_node', `added node: ${JSON.stringify(nodes[new_id])}`);
     
-    network_nodes.add({id: new_id, label: new_node});
-    //network_edges.add({id: current_node_id, from: current_node_id, to: current_node_id})
+    network_nodes.add({
+        id: new_id,
+        label: new_node,
+    });
     network.stabilize();
-    //current_node_id++;
+    
     node_addr.value = '';
 }
 
@@ -208,19 +266,17 @@ function addNetworkEdge(from, to) {
             id: `${new_edge_id1}`,
             from: from,
             to: to,
-            label: `${new_edge_id1}`,
+            //label: `${new_edge_id1}`,
         });
         network_edges.add({
             id: `${new_edge_id2}`,
             from: to,
             to: from,
-            label: `${new_edge_id2}`,
+            //label: `${new_edge_id2}`,
         });
 
         console.log(`Added edge1: ${JSON.stringify(network_edges.get(new_edge_id1))}`);
         console.log(`Added edge2: ${JSON.stringify(network_edges.get(new_edge_id2))}`);
-        
-
     }
     else {
         console.log('Edge already exists');
@@ -262,3 +318,8 @@ function stop_all() {
         });
     };
 }
+
+start_server();
+server_status.innerHTML = 'Online';
+server_status.style.color = 'green';
+server_button.innerHTML = 'Stop UDP Server';

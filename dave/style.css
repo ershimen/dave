@@ -2,6 +2,8 @@ body {
     margin: 0;
     width: 100vw;
     height: 100vh;
+    background-color: #F5F5F5;
+    color: #1F1F1F;
 }
 
 #main-container {
@@ -29,18 +31,17 @@ body {
 
     grid-row: 1;
 
-    background-color: #f0f0f0;
-    border-bottom: 1px solid #d0d0d0;
+    background-color: #ebebeb;
+    border-bottom: 1px solid #1F1F1F;
     -webkit-app-region: drag;
     -webkit-user-select: none;
     user-select: none;
-    
 }
 
 #tools {
     grid-column: 1;
     padding: 10px;
-    border: 1px solid black;
+    border: 1px solid #1F1F1F;
 
     display: flex;
     align-items: center;
@@ -55,7 +56,7 @@ body {
     grid-column: 2;
 
     padding: 10px;
-    border: 1px solid black;
+    border: 1px solid #1F1F1F;
 
     height: calc(100vh - 80px);
 
@@ -64,7 +65,7 @@ body {
 .tool-flex {
     font-family: 'Fira Sans';
 
-    border: 1px solid red;
+    border: 1px solid #C2847A;
     width: 150px;
 
 }
@@ -76,9 +77,9 @@ body {
 }
 
 .tool-button:hover {
-    background-color: red;
+    background-color: #C2847A;
     color: aliceblue;
-    border-color: black;
+    border-color: #1F1F1F;
 }
 
 .tool-input {
@@ -91,6 +92,26 @@ body {
     font-family: 'Fira Sans';
 }
 
-div.vis-manipulation {
-    background-color: blue;
+.manager-status-h1 {
+    font-size: 20px;
+}
+
+#manager-status-div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+    row-gap: 10px;
+}
+
+#manager-status-label {
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Fira Sans';
+}
+
+#manager-status {
+    font-size: 16px;
+    font-weight: bold;
+    font-family: 'Fira Sans';
 }

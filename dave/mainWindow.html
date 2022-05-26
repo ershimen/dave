@@ -17,14 +17,18 @@
         <header id="titlebar"></header>
         <div id="container">
             <div id="tools">
-                <h1 class="tool-h1">Control Panel</h1>
-                <input type="button" id="button-start" class="tool-flex tool-button" value="Start UDP server" onclick="start_server();">
-                <input type="button" id="button-stop" class="tool-flex tool-button" value="Stop UDP server" onclick="stop_server();">
+                <h1 class="tool-h1">Network Control</h1>
                 <input type="button" id="button-add" class="tool-flex tool-button" value="Add node" onclick="add_node();">
                 <input type="text" id="txt-node-addr" class="tool-flex tool-input">
                 <input type="button" id="button-start-selected" class="tool-flex tool-button" value="Start selected nodes" onclick="start_selected();">
                 <input type="button" id="button-start-all" class="tool-flex tool-button" value="Start all nodes" onclick="start_all();">
                 <input type="button" id="button-stop-all" class="tool-flex tool-button" value="Stop all nodes" onclick="stop_all();">
+                <h1 class="tool-h1 manager-status-h1">Manager Control</h1>
+                <div id="manager-status-div">
+                    <div id="manager-status-label">Status: </div>
+                    <div id="manager-status"></div>
+                </div>
+                <input type="button" id="server-button" class="tool-flex tool-button" value="Stop UDP Server" onclick="server_toggle();">
             </div>
             <div id="mynetwork"></div>
         </div>
