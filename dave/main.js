@@ -1,8 +1,11 @@
 const electron = require('electron');
 const url = require('url');
 const path = require('path');
+const { ipcMain } = require('electron');
+const ipc = ipcMain;
 
 const {app, BrowserWindow} = electron;
+
 
 let mainWindow;
 
@@ -18,7 +21,8 @@ app.on('ready', function() {
         height: 800,
         minWidth: 670,
         minHeight: 500,
-        frame: true,
+        frame: false,
+        transparent: true,
     });
     // Load html into window
     mainWindow.loadURL(url.format({
@@ -27,4 +31,18 @@ app.on('ready', function() {
         slashes: true,
     }));
 
+    ipc.on('minimizeApp', () => {
+        mainWindow.minimize();
+    });
+    ipc.on('maximizeApp', () => {
+        if (mainWindow.isMaximized()) {
+            mainWindow.restore();
+        }
+        else {
+            mainWindow.maximize();
+        }
+    });
+    ipc.on('closeApp', () => {
+        mainWindow.close();
+    });
 });

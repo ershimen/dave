@@ -1,3 +1,19 @@
+// Titlebar buttons
+const { ipcRenderer } = require('electron');
+const ipc = ipcRenderer;
+
+btnMini.addEventListener('click', () => {
+    ipc.send('minimizeApp');
+});
+btnMax.addEventListener('click', () => {
+    ipc.send('maximizeApp');
+});
+btnClose.addEventListener('click', () => {
+    stop_server();
+    ipc.send('closeApp');
+});
+
+
 const dgram = require('dgram');
 
 var udp_client = dgram.createSocket('udp4'); // TODO: close this socket
@@ -117,8 +133,6 @@ function formatLabel(ip, port, realPort, term) {
 
 var server_status = document.getElementById('manager-status');
 var server_button = document.getElementById('server-button');
-
-console.log(server_button);
 
 function server_toggle() {
     if (server_running) {

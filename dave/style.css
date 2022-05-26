@@ -2,13 +2,16 @@ body {
     margin: 0;
     width: 100vw;
     height: 100vh;
-    background-color: #F5F5F5;
+    
     color: #1F1F1F;
 }
 
 #main-container {
     display: grid;
     grid-template-rows: 40px 1fr;
+    background-color: #F5F5F5;
+    border-radius: 6px;
+    overflow: hidden;
 }
 
 #container {
@@ -24,11 +27,9 @@ body {
     box-sizing: border-box;
 
     height: calc(100vh - 40px);
-
 }
 
 #titlebar {
-
     grid-row: 1;
 
     background-color: #ebebeb;
@@ -36,7 +37,42 @@ body {
     -webkit-app-region: drag;
     -webkit-user-select: none;
     user-select: none;
+
+    display: grid;
+    grid-template-columns: 1fr 90px;
+    grid-template-rows: 40px;
+    align-content: center;
+    align-items: center;
 }
+
+#titlebar-title {
+    font-size: 23px;
+    font-weight: bold;
+    font-family: 'Fira Sans';
+    grid-column: 1;
+    padding: 12px;
+}
+
+.titlebar-btn {
+    height: 24px;
+    width: 24px;
+    border: 1px solid #ebebeb;
+    
+    background-color: #ebebeb;
+
+    transition-duration: 200ms;
+}
+.titlebar-btn:hover {
+    border: 1px solid #C2847A;
+}
+
+.titlebar-buttons {
+    grid-column: 2;
+    -webkit-app-region: no-drag;
+    background-color: coral;
+}
+
+
 
 #tools {
     grid-column: 1;
@@ -90,10 +126,6 @@ body {
 .tool-h1 {
     font-size: 23px;
     font-family: 'Fira Sans';
-}
-
-.manager-status-h1 {
-    font-size: 20px;
 }
 
 #manager-status-div {
