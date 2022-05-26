@@ -69,7 +69,12 @@ body {
 .titlebar-buttons {
     grid-column: 2;
     -webkit-app-region: no-drag;
-    background-color: coral;
+
+    margin-right: 7px;
+
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
 }
 
 
