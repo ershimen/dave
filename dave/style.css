@@ -21,7 +21,7 @@ body {
     gap: 10px;
     padding: 10px;
     box-sizing: border-box;
-    
+
     height: calc(100vh - 40px);
 }
 
@@ -58,6 +58,7 @@ body {
 
     transition-duration: 200ms;
 }
+
 .titlebar-btn:hover {
     border: 1px solid #C2847A;
 }
@@ -72,8 +73,6 @@ body {
     flex-direction: row;
     justify-content: space-between;
 }
-
-
 
 #tools {
     grid-column: 1;
