@@ -1,4 +1,3 @@
-const { net } = require('electron');
 const dgram = require('dgram');
 
 var udp_client = dgram.createSocket('udp4'); // TODO: close this socket
@@ -118,6 +117,11 @@ function updateGraph(msg) {
     }
 }
 
+function formatLabel(ip, port, realPort, term) {
+    if (term == -1) return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: unknown`;
+    else return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: ${term}`;
+}
+
 var server_status = document.getElementById('manager-status');
 var server_button = document.getElementById('server-button');
 
@@ -159,14 +163,21 @@ function start_server() {
         network.animateTraffic([{
             edge: e,
             trafficSize: 4,
-            
         }]);
-        
-        console.log(JSON.stringify(update_node));
 
-        network.updateClusteredNode(`${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`, {
-            label: 'new_label',
-        });
+        /*
+
+		MsgType: msg.MsgType,
+		Term:    msg.Term,
+		Enties:  msg.Entries,
+		SrcPort: selfPort,
+		SrcIp:   "localhost",
+		DstPort: port,
+		DstIp:   ip,
+
+        */
+        var aux_id = `${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`;
+        network_nodes.update([{id: aux_id, label: formatLabel(parsed_msg.SrcIp, nodes[aux_id].port, parsed_msg.SrcPort, parsed_msg.Term)}])
 
         updateGraph(parsed_msg);
     });
@@ -228,6 +239,7 @@ function add_node() {
     network_nodes.add({
         id: new_id,
         label: new_node,
+        label: formatLabel(match.groups.ip, match.groups.port, match.groups.realPort, -1),
     });
     network.stabilize();
     
@@ -305,6 +317,18 @@ function start_all() {
             }
         });
     };
+}
+
+function stop_selected() {
+    var node_aux = null;
+    for (const node of network.getSelectedNodes()) {
+        node_aux = nodes[node];
+        udp_client.send('{"type":"STOP", "args":"STOP"}', node_aux.port, node_aux.ip, function (err, bytes) {
+            if (!err) {
+                print('start_all', `Sent STOP to ${node_aux.ip}:${node_aux.port}`);
+            }
+        });
+    }
 }
 
 function stop_all() {
