@@ -110,13 +110,6 @@ var network = new vis.Network(container, data, options);
 var server = null
 var server_running = false
 
-function updateGraph(msg) {
-    switch (msg["type"]) {
-        default:
-            break;
-    }
-}
-
 function formatLabel(ip, port, realPort, term) {
     if (term == -1) return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: unknown`;
     else return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: ${term}`;
@@ -165,21 +158,16 @@ function start_server() {
             trafficSize: 4,
         }]);
 
-        /*
-
-		MsgType: msg.MsgType,
-		Term:    msg.Term,
-		Enties:  msg.Entries,
-		SrcPort: selfPort,
-		SrcIp:   "localhost",
-		DstPort: port,
-		DstIp:   ip,
-
-        */
         var aux_id = `${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`;
-        network_nodes.update([{id: aux_id, label: formatLabel(parsed_msg.SrcIp, nodes[aux_id].port, parsed_msg.SrcPort, parsed_msg.Term)}])
-
-        updateGraph(parsed_msg);
+        network_nodes.update([{
+            id: aux_id,
+            label: formatLabel(
+                parsed_msg.SrcIp,
+                nodes[aux_id].port,
+                parsed_msg.SrcPort,
+                parsed_msg.Term
+            ),
+        }]);
     });
 
     server.on('listening', function() {
@@ -287,8 +275,8 @@ function addNetworkEdge(from, to) {
             //label: `${new_edge_id2}`,
         });
 
-        console.log(`Added edge1: ${JSON.stringify(network_edges.get(new_edge_id1))}`);
-        console.log(`Added edge2: ${JSON.stringify(network_edges.get(new_edge_id2))}`);
+        //console.log(`Added edge1: ${JSON.stringify(network_edges.get(new_edge_id1))}`);
+        //console.log(`Added edge2: ${JSON.stringify(network_edges.get(new_edge_id2))}`);
     }
     else {
         console.log('Edge already exists');
