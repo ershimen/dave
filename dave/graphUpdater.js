@@ -1,7 +1,6 @@
 // Titlebar buttons
 const { ipcRenderer } = require('electron');
 const ipc = ipcRenderer;
-
 btnMini.addEventListener('click', () => {
     ipc.send('minimizeApp');
 });
@@ -10,54 +9,25 @@ btnMax.addEventListener('click', () => {
 });
 btnClose.addEventListener('click', () => {
     stop_server();
+    udp_client.close();
     ipc.send('closeApp');
 });
 
-
 const dgram = require('dgram');
+var udp_client = dgram.createSocket('udp4');
 
-var udp_client = dgram.createSocket('udp4'); // TODO: close this socket
-
+// Log messages
 function print(method, s) {
     console.log(`[${method}]: ${s}`);
 }
 
-var network_nodes = new vis.DataSet([
-    /*
-    {id: 1, label: 'Node 1'}, 
-    {id: 2, label: 'Node 2'}, 
-    {id: 3, label: 'Node 3'},
-    */
-]);
-
-
+// Network stuff
+var network_nodes = new vis.DataSet([]);
 var nodes = {};
+var network_edges = new vis.DataSet([]);
 
-var current_node_id = 4;
-
-/*
-for (var i=0; i<6; i++) {
-    nodes.add({id: i, label: `Node ${i}`});
-    n_nodes++;
-}
-*/
-var network_edges = new vis.DataSet([
-    /*
-    {id:1, from:1, to:1}, 
-    {id:2, from:2, to:1},
-    {id:3, from:2, to:3},
-    /*
-    {from: 1, to: 3},
-    {from: 1, to: 2},
-    {from: 2, to: 4},
-    {from: 2, to: 5}
-    */
-]);
-
-// create a network
 var container = document.getElementById('mynetwork');
 
-// provide the data in the vis format
 var data = {
     nodes: network_nodes,
     edges: network_edges,
@@ -100,37 +70,28 @@ var options = {
     manipulation: {
         enabled: true,
         addNode: false,
-        /*
-        addNode: function(data, callback) {
-            console.log("adding node");
-            network_nodes.add({id: current_node_id, label: current_node_id})
-            current_node_id++;
-        },*/
         editEdge: function(data, callback) {
-            console.log("editing node");
-
+            console.log("Editing node");
         },
         addEdge: function(data, callback) {
             addNetworkEdge(from=data.from, to=data.to);
-            //callback(data);
         },
         editEdge: function(data, callback) {
-            console.log("editing edge");
+            console.log("Editing edge");
         },
     },
 };
 
-// initialize your network!
 var network = new vis.Network(container, data, options);
-
-var server = null
-var server_running = false
 
 function formatLabel(ip, port, realPort, term) {
     if (term == -1) return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: unknown`;
     else return `ip: ${ip}\nsniffer_port: ${port}\nreal_port: ${realPort}\nterm: ${term}`;
 }
 
+// Manager server
+var server = null
+var server_running = false
 var server_status = document.getElementById('manager-status');
 var server_button = document.getElementById('server-button');
 
@@ -166,12 +127,13 @@ function start_server() {
         var parsed_msg = JSON.parse(msg);
         var e = `${parsed_msg.SrcIp}:${parsed_msg.SrcPort}_${parsed_msg.DstIp}:${parsed_msg.DstPort}`
 
+        // Animate message
         console.log(`Edge: ${e}`);
         network.animateTraffic([{
             edge: e,
-            trafficSize: 4,
+            trafficSize: 5,
         }]);
-
+        // Update node labels
         var aux_id = `${parsed_msg.SrcIp}:${parsed_msg.SrcPort}`;
         network_nodes.update([{
             id: aux_id,
@@ -187,11 +149,11 @@ function start_server() {
     server.on('listening', function() {
         const address = server.address();
         print('start_server', `listening on ${address.address}:${address.port}`);
-    })
+    });
 
     server.on('close', function() {
         print('start_server', 'Closed server');
-    })
+    });
 
     server.bind(3333);
     server_running = true;
@@ -222,7 +184,7 @@ function add_node() {
     else {
         print('add_node', 'Non empty');
     };
-    
+    // Check format
     var match = new_node.match(/(?<ip>[.\w]+):(?<port>\d+):(?<realPort>\d+)/);
     if (match == null) {
         print('add_node', 'Not ip:port:port format');
@@ -238,26 +200,20 @@ function add_node() {
     };
     print('add_node', `added node: ${JSON.stringify(nodes[new_id])}`);
     
-    network_nodes.add({
+    network_nodes.update([{
         id: new_id,
         label: new_node,
         label: formatLabel(match.groups.ip, match.groups.port, match.groups.realPort, -1),
-    });
-    network.stabilize();
+    }]);
+    network.stabilize(); // Prevent new nodes spawing on top of other nodes
     
     node_addr.value = '';
 }
 
 function addNetworkEdge(from, to) {
-    //console.log("adding edge");
     let new_edge_id1 = `${from}_${to}`;
     let new_edge_id2 = `${to}_${from}`;
-    /*
-    console.log(`new_id1: ${new_edge_id1}`);
-    console.log(`new_id2: ${new_edge_id2}`);
-    console.log(`from: ${from}`);
-    console.log(`to: ${to}`);
-    */
+    
     if (network_edges.get(new_edge_id1) == null) {
 
         let from_node = nodes[from];
@@ -276,21 +232,11 @@ function addNetworkEdge(from, to) {
             }
         });
 
-        network_edges.add({
-            id: `${new_edge_id1}`,
-            from: from,
-            to: to,
-            //label: `${new_edge_id1}`,
-        });
-        network_edges.add({
-            id: `${new_edge_id2}`,
-            from: to,
-            to: from,
-            //label: `${new_edge_id2}`,
-        });
-
-        //console.log(`Added edge1: ${JSON.stringify(network_edges.get(new_edge_id1))}`);
-        //console.log(`Added edge2: ${JSON.stringify(network_edges.get(new_edge_id2))}`);
+        // Add both edges
+        network_edges.update([
+            {id: `${new_edge_id1}`, from: from, to: to},
+            {id: `${new_edge_id2}`, from: to, to: from}
+        ]);
     }
     else {
         console.log('Edge already exists');
@@ -345,6 +291,7 @@ function stop_all() {
     };
 }
 
+// Start server initially
 start_server();
 server_status.innerHTML = 'Online';
 server_status.style.color = 'green';
