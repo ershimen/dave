@@ -61,6 +61,20 @@ var options = {
             align: 'left',
         },
     },
+    edges: {
+        arrows: {
+            to: {
+                enabled: true,
+                type: 'arrow',
+            },
+            middle: {
+                enabled: false,
+            },
+            from: {
+                enabled : false,
+            },
+        },
+    },
     physics: {
         enabled: false,
     },
