@@ -55,7 +55,7 @@ type NodeMsg struct {
 type UIMsg struct {
 	MsgType uint8
 	Term    int
-	Enties  []string
+	Entries []string
 	SrcPort uint16
 	SrcIp   string
 	DstPort uint16
@@ -518,28 +518,29 @@ func sendMsg(msg NodeMsg, ip string, port uint16) {
 		fmt.Println("Error encoding msg:", msg)
 	}
 	conn.Close()
+	/*
+		uiMsg := UIMsg{
+			MsgType: msg.MsgType,
+			Term:    msg.Term,
+			Entries:  msg.Entries,
+			SrcPort: selfPort,
+			SrcIp:   "localhost",
+			DstPort: port,
+			DstIp:   ip,
+		}
 
-	uiMsg := UIMsg{
-		MsgType: msg.MsgType,
-		Term:    msg.Term,
-		Enties:  msg.Entries,
-		SrcPort: selfPort,
-		SrcIp:   "localhost",
-		DstPort: port,
-		DstIp:   ip,
-	}
-
-	// para cuando no hay sniffer
-	conn2, err2 := net.Dial("udp", "0.0.0.0:3333")
-	if err2 != nil {
-		fmt.Printf("Error dialing %s\n", addr)
-		return
-	}
-	enc2 := json.NewEncoder(conn2)
-	if enc2.Encode(uiMsg) != nil {
-		fmt.Println("Error encoding msg:", uiMsg)
-	}
-	conn2.Close()
+		// para cuando no hay sniffer
+		conn2, err2 := net.Dial("udp", "0.0.0.0:3333")
+		if err2 != nil {
+			fmt.Printf("Error dialing %s\n", addr)
+			return
+		}
+		enc2 := json.NewEncoder(conn2)
+		if enc2.Encode(uiMsg) != nil {
+			fmt.Println("Error encoding msg:", uiMsg)
+		}
+		conn2.Close()
+	*/
 }
 
 func msgTypeToString(msgType uint8) string {
