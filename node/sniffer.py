@@ -77,7 +77,7 @@ def udp_listener(process, packet_filter, node_port):
 
 
 # argv[1]: ports separated with commas
-def main():
+def main2():
     # if len(sys.argv) < 4:
     #     print("Error: se necesita indicar la ip, el puerto y una lista de puertos")
     #     exit(1)
@@ -157,6 +157,105 @@ def main():
     
     process.wait()
     print("return_code:", process.returncode)
+
+
+########################################################################
+
+
+
+
+import socket
+import struct
+import textwrap
+
+def get_mac_addr(addr):
+    bytes_str = map('{:02x}'.format, addr)
+    return ':'.join(bytes_str).upper()
+
+def ipv4(addr):
+    return '.'.join(map(str, addr))
+
+def ethernet_fram(data):
+    dest_mac, src_mac, proto = struct.unpack('! 6s 6s H', data[:14])
+    return get_mac_addr(dest_mac), get_mac_addr(src_mac), socket.htons(proto), data[14:]
+
+def unpack_ipv4(data):
+    version_header_length = data[0]
+    version = version_header_length >> 4
+    header_length = (version_header_length & 15) * 4
+    ttl, ip_proto, src, target = struct.unpack('! 8x B B 2x 4s 4s', data[:20])
+    return version, header_length, ttl, ip_proto, ipv4(src), ipv4(target), data[header_length:]
+
+def tcp_segment(data):
+    src_port, dest_port, sequence, ack, offset_reserved_flags = struct.unpack('! H H L L H', data[:14])
+    offset = (offset_reserved_flags >> 12) * 4
+    flag_urg = (offset_reserved_flags & 32) >> 5
+    flag_ack = (offset_reserved_flags & 16) >> 4
+    flag_psh = (offset_reserved_flags & 8) >> 3
+    flag_rst = (offset_reserved_flags & 4) >> 2
+    flag_syn = (offset_reserved_flags & 2) >> 1
+    flag_fin = offset_reserved_flags & 1
+    return src_port, dest_port, sequence, ack, flag_urg, flag_ack, flag_psh, flag_rst, flag_syn, flag_fin, data[offset:]
+
+def main():
+    conn = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
+    while True:
+        try:
+            raw_data, addr = conn.recvfrom(65535)
+            dest_mac, src_mac, eth_proto, data = ethernet_fram(raw_data)
+            # print('\nEthernet Frame:')
+            # print('Destination: {}, Source: {}, Protocol: {}'.format(dest_mac, src_mac, eth_proto))
+
+            if eth_proto == 8: # ipv4
+                version, header_length, ttl, proto, src, target, data = unpack_ipv4(data)
+                # print('IPv4 Packet:')
+                # print('Version: {}, Header length: {}, TTL: {}'.format(version, header_length, ttl))
+                # print('Protocol: {}, Source: {}, Target: {}'.format(proto, src, target))
+
+                if proto == 6: # TCP
+                    src_port, dest_port, sequence, ack, flag_urg, flag_ack, flag_psh, flag_rst, flag_syn, flag_fin, packet_data = tcp_segment(data)
+                    # print('TCP Segment:')
+                    # print('Source Port: {}, Destination Port: {}'.format(src_port, dest_port))
+
+                    if dest_port == 12345 and flag_psh == 1:
+                        print('\nEthernet Frame:')
+                        print('Destination: {}, Source: {}, Protocol: {}'.format(dest_mac, src_mac, eth_proto))
+                        print('IPv4 Packet:')
+                        print('Version: {}, Header length: {}, TTL: {}'.format(version, header_length, ttl))
+                        print('Protocol: {}, Source: {}, Target: {}'.format(proto, src, target))
+                        print('TCP Segment:')
+                        print('Source Port: {}, Destination Port: {}'.format(src_port, dest_port))
+                        print('Sequence: {}, Ack: {}'.format(sequence, ack))
+                        print('Flags: URG: {}, ACK: {}, PSH: {}, RST: {}, SYN: {}, FIN: {}'.format(flag_urg, flag_ack, flag_psh, flag_rst, flag_syn, flag_fin))
+                        print('Data: {}'.format(packet_data))
+
+        except KeyboardInterrupt:
+            break
+
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+
+
+
+
+
+
+
+
+
+########################################################################
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
