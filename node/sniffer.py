@@ -1,10 +1,6 @@
-from logging.config import listen
 import struct
-import sys
-import os
 import socket
 import json
-from time import sleep
 from threading import Thread, Lock
 import subprocess
 
@@ -18,6 +14,44 @@ def addPort(port):
     mutex.acquire()
     ports.append(port)
     mutex.release()
+
+# Ethernet frame
+# 0                   1                   2                   3
+# 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |Version|  IHL  |     Type      |          Total Length         |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |         Identification        |Flags|      Fragment Offset    |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Time to Live |    Protocol   |         Header Checksum       |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                       Source Address                          |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Destination Address                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Options                    |    Padding    |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+# TCP header
+# 0                   1                   2                   3
+# 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |          Source Port          |       Destination Port        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                        Sequence Number                        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Acknowledgment Number                      |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |  Data |           |U|A|P|R|S|F|                               |
+# | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+# |       |           |G|K|H|T|N|N|                               |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |           Checksum            |         Urgent Pointer        |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                    Options                    |    Padding    |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+# |                             data                              |
+# +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 
 def sniffer():
     global cont
@@ -77,7 +111,7 @@ def sniffer():
                     app_server.sendto(bytes(json.dumps(captured_msg), encoding='utf-8'), manager_addr)
 
 # proceso que interactua con el nodo
-def udp_listener(process, packet_filter, node_port):
+def udp_listener(process, node_port):
     global cont
     with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as listener:
         listener.bind(("", 0))
@@ -85,7 +119,6 @@ def udp_listener(process, packet_filter, node_port):
         print("localhost:%d:%s" % (listener_port, node_port))
         print("ncat.exe -u 127.0.0.1", listener_port)
         print("""{"type": "STOP", "args":"STOP"}""")
-        end = False
         while cont:
             msg_raw, addr = listener.recvfrom(2048)
             #print("---------msg from %s:%s" % (addr[0], addr[1]))
@@ -125,7 +158,7 @@ def main():
     sniffer_thread.start()
     
     # Start listener socket
-    udp_listener_thread = Thread(target=udp_listener, args=(process, packet_filter, node_port))
+    udp_listener_thread = Thread(target=udp_listener, args=(process, node_port))
     udp_listener_thread.start()
 
     while process.poll() is None:
@@ -137,22 +170,6 @@ def main():
     sniffer_thread.join()
     udp_listener_thread.join()
 
-    
-    # while process.poll() is None:
-    #     print("waiting for line...")
-    #     line = process.stdout.readline()
-    #     print("got line")
-    #     if line != "":
-    #         print(line)
-    #         if node_port != "":
-    #             node_port = line[1:line.index(']')]
-    #             print("Node port is", node_port)
-    #         if n_lines == 0:
-    #             print("sending stop")
-    #             process.stdin.write(b'STOP\n')
-    #             process.stdin.flush()
-    #         n_lines = n_lines - 1
-    
     process.wait()
     print("return_code:", process.returncode)
 
